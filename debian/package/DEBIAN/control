@@ -1,0 +1,27 @@
+Package: mifosx
+Version: 15.03-2
+Maintainer: Community for Open Source Microfinance
+Architecture: all
+Pre-Depends: debconf
+Depends: tomcat7, openjdk-7-jre, mysql-server
+Description: MifosX - MicroFinance in Open Source
+ Mifos X is an API-driven open platform for financial inclusion with a suite of
+ simple configurable apps hosted in the cloud, immediately available for
+ deployment worldwide
+ .
+ Mifos X is led by the Mifos Initiative, a 501(c)3 non-profit that guides the
+ community of financial service providers, technology specialists, financial
+ services experts and open source developers working together to grow the Mifos
+ open source platform for financial inclusion
+ .
+ Our goal is to speed the elimination of poverty by enabling financial service
+ providers to more effectively and efficiently deliver responsible financial
+ services to the world’s 2.5 billion poor and unbanked
+ .
+ Mifos X consists of 1) the platform (A RESTful back-end which talks to a to a
+ MySQL database and is built on the Jersey/Spring/JPA stack) and 2) the
+ community app (AngularJS app which provides support for the most commonly used
+ financial inclusion models) as well as 3) RESTful APIs from our platform
+ accessing all the core underlying functionality to enable the community to
+ quickly build their own enterprise grade financial inclusion products/apps on
+ any technology stack

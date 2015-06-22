@@ -1,0 +1,125 @@
+#!/bin/sh
+
+set -e
+
+KEYSTORE=/usr/share/mifosx/.keystore
+
+if [ "configure" = "$1" ]; then
+  if . /usr/share/debconf/confmodule; then
+    db_version 2.0
+
+    # Ask for MySQL root password
+    db_input high mifosx/mysql_root_password || true
+    db_go
+
+    # Get MySQL root password
+    db_get mifosx/mysql_root_password
+    SVRXML="/usr/share/mifosx/tomcat7/server.xml"
+    DSTXML=/etc/tomcat7/server.xml
+    if [ -f $DSTXML -a ! -e $DSTXML.orig ]; then
+      cp $DSTXML $DSTXML.orig || true
+    fi
+    if [ ! -z "$RET" ]; then
+      MYSQL_ROOT_PW="$RET"  
+      f=`mktemp`
+      mysql --user=root --password="$MYSQL_ROOT_PW" -e"SHOW DATABASES" > $f
+      EXISTS=0
+      RESULT=`cat $f | grep "mifosplatform-tenants" || true`
+      if [ "$RESULT" = "mifosplatform-tenants" ]; then
+        EXISTS=1
+      else
+        RESULT=`cat $f | grep "mifostenant-default" || true`
+        if [ "$RESULT" = "mifostenant-default" ]; then
+          EXISTS=1
+        fi
+      fi
+      if [ 1 -eq $EXISTS ]; then
+        db_input high mifosx/recreate_databases || true
+        db_go
+      else
+        db_set mifosx/recreate_databases true
+      fi
+      db_get mifosx/recreate_databases
+      if [ "true" = "$RET" ]; then
+        g=`mktemp`
+        for d in mifosplatform-tenants mifostenant-default; do
+          echo "DROP DATABASE IF EXISTS \`$d\`;
+      CREATE DATABASE \`$d\`;" >> $g
+        done
+        mysql -u root -p"$MYSQL_ROOT_PW" < $g
+        rm $g
+        if [ "mysql" != "$MYSQL_ROOT_PW" ]; then
+          sqlpath=/usr/share/mifosx/database/mifospltaform-tenants-first-time-install.sql
+          mysql -u root -p"$MYSQL_ROOT_PW" mifosplatform-tenants < $sqlpath
+          cmd="UPDATE tenants SET schema_password='$MYSQL_ROOT_PW' WHERE identifier='default'"
+          mysql -u root -p"$MYSQL_ROOT_PW" mifosplatform-tenants -e "$cmd"  
+        fi
+        db_input high mifosx/load_sample_data || true
+        db_go
+        db_get mifosx/load_sample_data
+        if [ "true" = "$RET" ]; then
+          sqlpath=/usr/share/mifosx/database/migrations/sample_data/load_sample_data.sql
+          mysql -u root -p"$MYSQL_ROOT_PW" mifostenant-default < $sqlpath
+        fi
+      fi
+      sed "/password=/s/mysql/$MYSQL_ROOT_PW/" $SVRXML > $DSTXML || true
+    else
+      cp $SVRXML $DSTXML
+    fi
+
+    arch=`dpkg --print-architecture`
+    dt=/etc/default/tomcat7
+    grep -q "^JAVA_HOME" $dt || sed -i "/^#JAVA_HOME/aJAVA_HOME=" $dt || true
+    sed -i "/^JAVA_HOME/s/.*/JAVA_HOME=\/usr\/lib\/jvm\/java-7-openjdk-$arch/" $dt || true
+    sed -i "/^JAVA_OPTS/s/128m/1024m/" $dt || true
+    if ! getent passwd mifos > /dev/null; then
+      useradd -d /usr/share/mifosx mifos || true
+    fi
+    chown -R mifos:mifos /usr/share/mifosx || true
+
+    if [ -f $KEYSTORE ]; then
+      db_input high mifosx/recreate_keystore || true
+      db_go
+    else
+      db_set mifosx/recreate_keystore true
+    fi
+
+    db_get mifosx/recreate_keystore
+    if [ "true" = "$RET" ]; then
+      if [ -f $KEYSTORE ]; then
+        rm $KEYSTORE
+      fi
+
+      db_set mifosx/cname "$(hostname -f)"
+      for var in cname org_name org_unit city state country; do
+        db_input high mifosx/$var || true
+        db_go
+        db_get mifosx/$var                               
+        if [ ! -z "$RET" ]; then
+          eval "$var=\"$RET\"" || true
+        fi 
+      done
+
+      keytool -keystore $KEYSTORE -keyalg RSA -storepass tomcat7 -keypass tomcat7 \
+        -dname "CN='$cname', OU=$org_unit, O='$org_name', L=$city, S=$state, C=$country" \
+        -alias mifosx -genkey || true
+    fi
+
+    db_input high mifosx/use_standard_port || true
+    db_go
+    db_get mifosx/use_standard_port
+    if [ "true" = "$RET" ]; then
+      sed -i '/port="8443"/s/8443/443/' /etc/tomcat7/server.xml || true
+      if ! grep -q '^AUTHBIND' /etc/default/tomcat7; then
+        if grep -q '^#AUTHBIND' /etc/default/tomcat7; then
+          sed -i "/^#AUTHBIND/s/^#.*/AUTHBIND=yes/" /etc/default/tomcat7 || true
+        else
+          sed -i '$aAUTHBIND=yes' /etc/default/tomcat7 || true
+        fi
+      fi
+    fi
+
+    service tomcat7 restart
+  fi
+fi
+exit 0
