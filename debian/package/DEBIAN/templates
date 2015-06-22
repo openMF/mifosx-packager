@@ -1,0 +1,84 @@
+Template: mifosx/mysql_root_password
+Type: password
+Default: mysql
+Description: MySQL root password
+ To create the databases for Mifos X,
+ the root (administrator) password for
+ MySQL Server is needed
+
+Template: mifosx/recreate_databases
+Type: boolean
+Default: false
+Description: Reconfigure databases
+ Mifos X tenant database exists.
+ Delete and re-create it?
+
+Template: mifosx/load_sample_data
+Type: boolean
+Default: false
+Description: Load sample data
+ If required the database can be
+ prepopulated with some demo data
+
+Template: mifosx/recreate_keystore
+Type: boolean
+Default: false
+Description: Reconfigure keystore
+ Mifos X keystore exists.
+ Delete and re-create it?
+
+Template: mifosx/org_name
+Type: string
+Default: Mifos Initiative
+Description: Organization Name
+ To create the SSL certificate for Mifos X,
+ the organization name is required
+
+Template: mifosx/country
+Type: string
+Default: US
+Description: 2-letter country code
+ To create the SSL certificate for Mifos X,
+ the 2 letter country code is needed
+
+Template: mifosx/state
+Type: string
+Default: Washington
+Description: State/Province
+ To create the SSL certificate for Mifos X,
+ the State/Province name is needed
+
+Template: mifosx/city
+Type: string
+Default: Seattle
+Description: City/Locality
+ To create the SSL certificate for Mifos X,
+ please enter the name of your City or Locality
+
+Template: mifosx/cname
+Type: string
+Default: mifos.sanjosesolutions.in
+Description: Full Name
+ To create the SSL certificate for Mifos X,
+ the fullname is required
+
+Template: mifosx/org_unit
+Type: string
+Default: People
+Description: Organizational Unit
+ To create the SSL certificate for Mifos X,
+ the Organizational Unit is required
+
+Template: mifosx/use_standard_port
+Type: boolean
+Default: false
+Description: Run Mifos X on standard ports?
+ The default port to run Mifos X is 8443.
+ If you want, Mifos X can be configured to run on
+ the standard HTTPS port 443, but it is generally
+ considered a security feature to not run java on
+ ports below 1024 which are called PrivilegePorts.
+ If you don't already have another web server running
+ on that standard port, and you really want to run
+ Mifos X on standard port 443, you may select this.
+
