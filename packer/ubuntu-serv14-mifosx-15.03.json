@@ -1,0 +1,33 @@
+{
+  "variables": {
+    "sn": "subscription-name",
+    "ps": "/path/to/config.publishsettings",
+    "sa": "storage-account-name",
+    "sc": "storage-account-container"
+  },
+  "builders": [
+    {
+      "type": "azure",
+      "publish_settings_path": "{{user `ps`}}",
+      "subscription_name": "{{user `sn`}}",
+      "storage_account": "{{user `sa`}}",
+      "storage_account_container": "{{user `sc`}}",
+      "os_type": "Linux",
+      "os_image_label": "Ubuntu Server 14.04 LTS",
+      "location": "West US",
+      "instance_size": "Small",
+      "user_image_label": "Ubuntu_Serv14_MifosX_15.03"
+    }
+  ],
+  "provisioners": [
+    {
+      "scripts": [
+        "scripts/ubuntu/init.sh",
+        "scripts/common/mifosx.sh",
+        "scripts/ubuntu/authbind-https.sh",
+        "scripts/ubuntu/cleanup.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}
